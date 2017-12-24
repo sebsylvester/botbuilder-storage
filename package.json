@@ -1,0 +1,44 @@
+{
+  "name": "botbuilder-storage",
+  "version": "1.0.0",
+  "description": "Storage adapter to manage your bot’s state data.",
+  "main": "lib/Storage.js",
+  "types": "lib/",
+  "scripts": {
+    "build": "tsc",
+    "types": "tsc --declaration",
+    "build:watch": "tsc --watch",
+    "pretest": "tsc test/*.ts --module commonjs --sourcemap",
+    "pretest:watch": "tsc test/*.ts --module commonjs --sourcemap --watch",
+    "test": "nyc --reporter=lcov mocha",
+    "posttest": "nyc report --reporter=json && codecov -f coverage/*.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sebsylvester/botbuilder-storage.git"
+  },
+  "keywords": [
+    "botbuilder",
+    "chatbots",
+    "bots",
+    "state",
+    "storage"
+  ],
+  "author": "Sebastian Sylvester",
+  "license": "MIT",
+  "bugs": "https://github.com/sebsylvester/botbuilder-storage/issues",
+  "homepage": "https://github.com/sebsylvester/botbuilder-storage",
+  "dependencies": {
+    "botbuilder": "^3.13.1"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.0.10",
+    "@types/mocha": "^2.2.44",
+    "chai": "^4.1.2",
+    "codecov": "^3.0.0",
+    "mocha": "^4.0.1",
+    "nyc": "^11.4.1",
+    "sinon": "^4.1.3",
+    "typescript": "^2.6.2"
+  }  
+}
