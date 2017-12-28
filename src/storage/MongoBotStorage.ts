@@ -15,9 +15,7 @@ import {
  * @implements IBotStorage
  */
 export class MongoBotStorage implements IBotStorage {
-    private collection: string;
-    private userStore: { [id: string]: string; } = {};
-    private conversationStore: { [id: string]: string; } = {};
+    public collection: string;
 
     /**
      * Creates an instance of MongoBotStorage.
@@ -27,6 +25,10 @@ export class MongoBotStorage implements IBotStorage {
     constructor(public db: any, options?: IMongoBotStorageOptions) {
         const { collection="botdata" } = options || {};
         this.collection = collection;
+
+        if (typeof collection !== 'string') {
+            throw new Error('Invalid options value, "collection" must be of type string.');
+        }
     }
 
     /**
@@ -36,29 +38,28 @@ export class MongoBotStorage implements IBotStorage {
      */
     public getData(context: IBotStorageContext, callback: (err: Error, data: IBotStorageData) => void): void {
         // List of write operations
-        const operations: IMongoReadOperation[] = [];
+        const readOps: IMongoReadOperation[] = [];
         const data: IBotStorageData = {};
 
         if (context.userId) {
             // Read userData
             if (context.persistUserData) {
-                operations.push(<IMongoReadOperation>{ 
+                readOps.push(<IMongoReadOperation>{ 
                     id: context.userId,
                     key: 'userData'
                 });
             }
             if (context.conversationId) {
                 // Read privateConversationData
-                let id = `${context.userId}:${context.conversationId}`;
-                operations.push(<IMongoReadOperation>{ 
-                    id: id,
+                readOps.push(<IMongoReadOperation>{ 
+                    id: `${context.userId}:${context.conversationId}`,
                     key: 'privateConversationData'
                 });
             }
         }
         if (context.persistConversationData && context.conversationId) {
             // Read conversationData
-            operations.push(<IMongoReadOperation>{ 
+            readOps.push(<IMongoReadOperation>{ 
                 id: context.conversationId,
                 key: 'conversationData'
             });
@@ -66,7 +67,7 @@ export class MongoBotStorage implements IBotStorage {
 
         // Execute all read ops
         const c = this.collection;
-        Promise.all(operations.map((op) => {
+        Promise.all(readOps.map((op) => {
             return new Promise((resolve, reject) => {
                 this.db.collection(c).findOne({ _id: op.id }, (err: Error, doc: any) => {
                     if (err) {
@@ -79,7 +80,7 @@ export class MongoBotStorage implements IBotStorage {
             });
         })).then(() => {
             callback(null, data);
-        }).catch((error) => { 
+        }).catch(error => { 
             callback(error, {});
         });
         
@@ -93,44 +94,47 @@ export class MongoBotStorage implements IBotStorage {
      */
     public saveData(context: IBotStorageContext, data: IBotStorageData, callback?: (err: Error) => void): void {
         // List of write operations
-        const operations: IMongoWriteOperation[] = [];
+        const writeOps: IMongoWriteOperation[] = [];        
 
         if (context.userId) {
             // Write userData
             if (context.persistUserData) {
-                operations.push(<IMongoWriteOperation>{ 
+                writeOps.push(<IMongoWriteOperation>{ 
                     id: context.userId, 
                     data: JSON.stringify(data.userData || {}),
+                    type: 'userData',
                     lastModified: new Date().toISOString()
                 });
             }
             if (context.conversationId) {
                 // Write privateConversationData
-                let id = `${context.userId}:${context.conversationId}`;
-                operations.push(<IMongoWriteOperation>{
-                    id: id, 
+                writeOps.push(<IMongoWriteOperation>{
+                    id: `${context.userId}:${context.conversationId}`, 
                     data: JSON.stringify(data.privateConversationData || {}),
+                    type: 'privateConversationData',
                     lastModified: new Date().toISOString()
                 });
             }
         }
         if (context.persistConversationData && context.conversationId) {
             // Write conversationData
-            operations.push(<IMongoWriteOperation>{
+            writeOps.push(<IMongoWriteOperation>{
                 id: context.conversationId, 
                 data: JSON.stringify(data.conversationData || {}),
+                type: 'conversationData',
                 lastModified: new Date().toISOString()
             });
         }
 
         // Execute all write ops
         const c = this.collection;
-        Promise.all(operations.map((op) => {
+        Promise.all(writeOps.map((op) => {
             return new Promise((resolve, reject) => {
                 let filter = { _id: op.id };
                 let update = {
                     _id: op.id, 
                     data: op.data,
+                    type: op.type,
                     lastModified: op.lastModified
                 };
 
@@ -144,7 +148,7 @@ export class MongoBotStorage implements IBotStorage {
             });
         })).then(() => {
             callback(null) 
-        }).catch((error) => {
+        }).catch(error => {
             callback(error) 
         });
     }
