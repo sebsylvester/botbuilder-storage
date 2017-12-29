@@ -1,10 +1,11 @@
 import { 
     IBotStorage, 
-    IBotStorageContext, 
-    IBotStorageData 
+    IBotStorageContext
 } from "botbuilder";
+import { createHash } from 'crypto';
 import { 
-    BotStorageKey, 
+    StorageType,
+    IBotHashedStorageData,
     IMongoBotStorageOptions,
     IMongoReadOperation,
     IMongoWriteOperation
@@ -16,7 +17,7 @@ import {
  */
 export class MongoBotStorage implements IBotStorage {
     public collection: string;
-
+    
     /**
      * Creates an instance of MongoBotStorage.
      * @param {any} db - The selected database
@@ -36,45 +37,58 @@ export class MongoBotStorage implements IBotStorage {
      * @param {IBotStorageContext} context - Context object passed to IBotStorage calls.
      * @param {function} callback - Callback to pass the retrieved data to the caller.
      */
-    public getData(context: IBotStorageContext, callback: (err: Error, data: IBotStorageData) => void): void {
+    public getData(context: IBotStorageContext, callback: (err: Error, data: IBotHashedStorageData) => void): void {
         // List of write operations
         const readOps: IMongoReadOperation[] = [];
-        const data: IBotStorageData = {};
+        const data: IBotHashedStorageData = {};
+        const { 
+            userId, 
+            conversationId, 
+            persistUserData, 
+            persistConversationData 
+        } = context;
 
-        if (context.userId) {
+        if (userId) {
             // Read userData
-            if (context.persistUserData) {
+            if (persistUserData) {
                 readOps.push(<IMongoReadOperation>{ 
-                    id: context.userId,
-                    key: 'userData'
+                    _id: userId,
+                    type: 'userData'
                 });
             }
-            if (context.conversationId) {
+            if (conversationId) {
                 // Read privateConversationData
                 readOps.push(<IMongoReadOperation>{ 
-                    id: `${context.userId}:${context.conversationId}`,
-                    key: 'privateConversationData'
+                    _id: `${userId}:${conversationId}`,
+                    type: 'privateConversationData'
                 });
             }
         }
-        if (context.persistConversationData && context.conversationId) {
+        if (persistConversationData && conversationId) {
             // Read conversationData
             readOps.push(<IMongoReadOperation>{ 
-                id: context.conversationId,
-                key: 'conversationData'
+                _id: conversationId,
+                type: 'conversationData'
             });
         }
 
         // Execute all read ops
         const c = this.collection;
-        Promise.all(readOps.map((op) => {
+        Promise.all(readOps.map(entry => {
             return new Promise((resolve, reject) => {
-                this.db.collection(c).findOne({ _id: op.id }, (err: Error, doc: any) => {
+                const { _id, type } = entry;
+                
+                this.db.collection(c).findOne({ _id }, (err: Error, doc: any) => {
                     if (err) {
                         return reject(err);
                     }
-                    let docData = doc && doc.data || '{}';
-                    data[op.key] = JSON.parse(docData);
+                    const docData = doc && doc.data || '{}';
+                    const hash = doc && doc.hash;
+                    const hashKey: string = type + 'Hash';
+
+                    data[type] = JSON.parse(docData);
+                    data[hashKey] = hash;
+                    
                     resolve(doc);
                 });
             });
@@ -82,64 +96,70 @@ export class MongoBotStorage implements IBotStorage {
             callback(null, data);
         }).catch(error => { 
             callback(error, {});
-        });
-        
+        });        
     }
 
     /**
      * Writes out data to storage.
      * @param {IBotStorageContext} context - Context object passed to IBotStorage calls.
-     * @param {IBotStorageData} data - Object containing the data being persisted to storage.
+     * @param {IBotHashedStorageData} data - Object containing the data being persisted to storage.
      * @param {function} callback - Optional callback to pass errors to the caller.
      */
-    public saveData(context: IBotStorageContext, data: IBotStorageData, callback?: (err: Error) => void): void {
+    public saveData(context: IBotStorageContext, data: IBotHashedStorageData, callback?: (err: Error) => void): void {
         // List of write operations
-        const writeOps: IMongoWriteOperation[] = [];        
+        const writeOps: IMongoWriteOperation[] = [];
+        const { 
+            userId, 
+            conversationId, 
+            persistUserData, 
+            persistConversationData 
+        } = context;
+        
+        // Checks if a write operation is required by comparing hashes.
+        // Only write to the database if the data has changed.
+        function addWrite(type: StorageType, id: string, data: any, prevHash: string) {
+            const _data = JSON.stringify(data || {});
+            const hash = createHash('sha256').update(_data);
+            const newHash = hash.digest('hex');
 
-        if (context.userId) {
-            // Write userData
-            if (context.persistUserData) {
-                writeOps.push(<IMongoWriteOperation>{ 
-                    id: context.userId, 
-                    data: JSON.stringify(data.userData || {}),
-                    type: 'userData',
-                    lastModified: new Date().toISOString()
-                });
-            }
-            if (context.conversationId) {
-                // Write privateConversationData
+            if (newHash !== prevHash) {
                 writeOps.push(<IMongoWriteOperation>{
-                    id: `${context.userId}:${context.conversationId}`, 
-                    data: JSON.stringify(data.privateConversationData || {}),
-                    type: 'privateConversationData',
+                    _id: id,
+                    data: _data,
+                    hash: newHash,
+                    type: type,
                     lastModified: new Date().toISOString()
                 });
             }
         }
-        if (context.persistConversationData && context.conversationId) {
+
+        if (userId) {
+            // Write userData
+            if (persistUserData) {
+                addWrite('userData', userId, data.userData, data.userDataHash);
+            }
+            if (conversationId) {
+                // Write privateConversationData
+                const id = `${userId}:${conversationId}`;
+                const { privateConversationData: d, privateConversationDataHash: h } = data;
+                addWrite('privateConversationData', id, d, h);
+            }
+        }
+        if (persistConversationData && conversationId) {
             // Write conversationData
-            writeOps.push(<IMongoWriteOperation>{
-                id: context.conversationId, 
-                data: JSON.stringify(data.conversationData || {}),
-                type: 'conversationData',
-                lastModified: new Date().toISOString()
-            });
+            const { conversationData: d, conversationDataHash: h } = data;
+            addWrite('conversationData', conversationId, d, h);
         }
 
         // Execute all write ops
         const c = this.collection;
-        Promise.all(writeOps.map((op) => {
+        Promise.all(writeOps.map(entry => {
             return new Promise((resolve, reject) => {
-                let filter = { _id: op.id };
-                let update = {
-                    _id: op.id, 
-                    data: op.data,
-                    type: op.type,
-                    lastModified: op.lastModified
-                };
+                const { _id, data, hash, type, lastModified } = entry;
+                const doc = { data, hash, type, lastModified }
+                const options = { upsert: true };
 
-                let options = { upsert: true };
-                this.db.collection(c).update(filter, update, options, (err: Error, res: any) => {
+                this.db.collection(c).update({ _id }, doc, options, (err: Error, res: any) => {
                     if (err) {
                         return reject(err);
                     }
