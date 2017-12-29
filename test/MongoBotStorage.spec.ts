@@ -1,4 +1,5 @@
-import { IBotStorageContext, IBotStorageData } from 'botbuilder';
+import { IBotStorageContext } from 'botbuilder';
+import { IBotHashedStorageData } from '../lib/types'
 const expect = require('chai').expect;
 const sinon = require('sinon');
 const { MongoBotStorage } = require('../lib/');
@@ -32,21 +33,27 @@ describe('MongoBotStorage', function () {
                 collection() {
                     return {
                         findOne(filter, callback) {
-                            const doc = { data: null };
-                            const data = <IBotStorageData>{
+                            const doc = { data: null, hash: null };
+                            const data = <IBotHashedStorageData>{
                                 userData: { state: 'user specific' },
+                                userDataHash: '__userDataHash__',
                                 conversationData: { state: 'public' },
-                                privateConversationData: { state: 'private' }
+                                conversationDataHash: '__conversationDataHash__',
+                                privateConversationData: { state: 'private' },
+                                privateConversationDataHash: '__privateConversationDataHash__'
                             }
                             switch (filter._id) {
                                 case 'default-user':
                                     doc.data = JSON.stringify(data.userData);
+                                    doc.hash = data.userDataHash;
                                     break;
                                 case 'default-user:123456789':
                                     doc.data = JSON.stringify(data.privateConversationData);
+                                    doc.hash = data.privateConversationDataHash;
                                     break;
                                 case '123456789':
                                     doc.data = JSON.stringify(data.conversationData);
+                                    doc.hash = data.conversationDataHash;
                                     break;
                                 case 'null':
                                     break;
@@ -68,7 +75,7 @@ describe('MongoBotStorage', function () {
                 persistConversationData: true
             }
 
-            botStorage.getData(context, (err: Error, data: IBotStorageData) => {
+            botStorage.getData(context, (err: Error, data: IBotHashedStorageData) => {
                 const { userData, conversationData, privateConversationData } = data;
                 expect(userData).to.deep.equal({ state: 'user specific' });
                 expect(conversationData).to.deep.equal({ state: 'public' });
@@ -82,7 +89,7 @@ describe('MongoBotStorage', function () {
                 persistConversationData: false
             }
 
-            botStorage.getData(context, (err: Error, data: IBotStorageData) => {
+            botStorage.getData(context, (err: Error, data: IBotHashedStorageData) => {
                 expect(data).to.deep.equal({});
             });
 
@@ -93,7 +100,7 @@ describe('MongoBotStorage', function () {
                 persistConversationData: false
             }
 
-            botStorage.getData(context, (err: Error, data: IBotStorageData) => {
+            botStorage.getData(context, (err: Error, data: IBotHashedStorageData) => {
                 expect(data.userData).to.deep.equal({});
             });
 
@@ -103,7 +110,7 @@ describe('MongoBotStorage', function () {
                 persistConversationData: false
             }
 
-            botStorage.getData(context, (err: Error, data: IBotStorageData) => {
+            botStorage.getData(context, (err: Error, data: IBotHashedStorageData) => {
                 expect(data).to.deep.equal({});
                 done();
             });
@@ -130,7 +137,7 @@ describe('MongoBotStorage', function () {
                 persistConversationData: false
             }
 
-            botStorage.getData(context, (err: Error, data: IBotStorageData) => {
+            botStorage.getData(context, (err: Error, data: IBotHashedStorageData) => {
                 expect(err.message).to.equal(errorMessage);
                 done();
             });
@@ -139,10 +146,14 @@ describe('MongoBotStorage', function () {
 
     describe('saveData', function () {
         it('should save data with the MongoDB client', function (done) {
-            let data: IBotStorageData = {
-                userData: { state: 'user specific' },
-                conversationData: { state: 'public' },
-                privateConversationData: { state: 'private' }
+            let data: IBotHashedStorageData = {
+                userData: <any>{ state: 'user specific' },
+                // Use an actual correct hash once for code coverage purposes
+                userDataHash: 'f365860ae6855894e368268d695b061bf3503094e0431b581f5b944db232ffd0',
+                conversationData: <any>{ state: 'public' },
+                conversationDataHash: '__conversationDataHash__',
+                privateConversationData: <any>{ state: 'private' },
+                privateConversationDataHash: '__privateConversationDataHash__'
             }
 
             // Mock of MongoDB client
@@ -152,16 +163,19 @@ describe('MongoBotStorage', function () {
                         update(filter, update, options, callback) {
                             switch (filter._id) {
                                 case 'default-user':
-                                    expect(update._id).to.equal('default-user');
+                                    expect(filter._id).to.equal('default-user');
                                     expect(update.data).to.equal(JSON.stringify(data.userData));
+                                    expect(update.hash).to.equal(data.userDataHash);
                                     break;
                                 case 'default-user:123456789':
-                                    expect(update._id).to.equal('default-user:123456789');
+                                    expect(filter._id).to.equal('default-user:123456789');
                                     expect(update.data).to.equal(JSON.stringify(data.privateConversationData));
+                                    expect(update.hash).to.not.equal(data.privateConversationDataHash);
                                     break;
                                 case '123456789':
-                                    expect(update._id).to.equal('123456789');
+                                    expect(filter._id).to.equal('123456789');
                                     expect(update.data).to.equal(JSON.stringify(data.conversationData));
+                                    expect(update.hash).to.not.equal(data.conversationDataHash);
                                     break;
                                 case 'null':
                                     break;
@@ -218,8 +232,11 @@ describe('MongoBotStorage', function () {
             }            
             data = {
                 userData: null,
+                userDataHash: null,
                 conversationData: null,
-                privateConversationData: null
+                conversationDataHash: null,
+                privateConversationData: null,
+                privateConversationDataHash: null
             }
             let db2 = {
                 collection() {
@@ -227,15 +244,15 @@ describe('MongoBotStorage', function () {
                         update(filter, update, options, callback) {
                             switch (filter._id) {
                                 case 'default-user':
-                                    expect(update._id).to.equal('default-user');
+                                    expect(filter._id).to.equal('default-user');
                                     expect(update.data).to.equal(JSON.stringify({}));
                                     break;
                                 case 'default-user:123456789':
-                                    expect(update._id).to.equal('default-user:123456789');
+                                    expect(filter._id).to.equal('default-user:123456789');
                                     expect(update.data).to.equal(JSON.stringify({}));
                                     break;
                                 case '123456789':
-                                    expect(update._id).to.equal('123456789');
+                                    expect(filter._id).to.equal('123456789');
                                     expect(update.data).to.equal(JSON.stringify({}));
                                     break;
                                 case 'null':
@@ -258,10 +275,13 @@ describe('MongoBotStorage', function () {
         });
 
         it('should catch errors thrown while saving data', function (done) {
-            const data: IBotStorageData = {
-                userData: { state: 'user specific' },
-                conversationData: { state: 'public' },
-                privateConversationData: { state: 'private' }
+            const data: IBotHashedStorageData = {
+                userData: <any>{ state: 'user specific' },
+                userDataHash: '__userDataHash__',
+                conversationData: <any>{ state: 'public' },
+                conversationDataHash: '__conversationDataHash__',
+                privateConversationData: <any>{ state: 'private' },
+                privateConversationDataHash: '__privateConversationDataHash__'
             }
             const errorMessage = 'Something went wrong';
 
