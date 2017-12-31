@@ -1,22 +1,46 @@
-export type BotStorageKey = "userData" | "conversationData" | "privateConversationData"
+import { IBotStorageData } from "botbuilder";
 
-/**
- * MongoDB related type declarations
- */
-export interface IMongoBotStorageOptions {
-    // The collection to persist the data to.
-    // Defaults to "botdata".
-    collection?: string;
+export type BotState = "userData" | "conversationData" | "privateConversationData";
+
+export interface IBotHashedStorageData extends IBotStorageData {
+    userDataHash?: string;
+    conversationDataHash?: string;
+    privateConversationDataHash?: string;
+    [key: string]: any;
 }
 
 export interface IMongoWriteOperation {
-    id: string;
+    _id: string;
     data: any;
-    type: BotStorageKey;
+    hash: string;
+    type: BotState;
     lastModified: string;
 }
 
 export interface IMongoReadOperation {
-    id: string;
-    key: BotStorageKey;
+    _id: string;
+    type: BotState;
+}
+
+export interface IDynamoWriteOperation {
+    key: string;
+    data: any;
+    hash: string;
+    type: BotState;
+    lastModified: string;
+}
+
+export interface IDynamoReadOperation {
+    key: string;
+    type: BotState;
+}
+
+export interface IRedisWriteOperation {
+    key: string;
+    value: any;
+}
+
+export interface IRedisReadOperation {
+    key: string;
+    type: BotState;
 }
