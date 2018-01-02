@@ -8,10 +8,13 @@
     "build": "tsc",
     "types": "tsc --declaration",
     "build:watch": "tsc --watch",
+    "lint:src": "tslint 'src/**/*.ts'",
+    "lint:test": "tslint 'test/**/*.ts'",
+    "lint": "npm run lint:src && npm run lint:test",
     "pretest": "tsc test/*.ts --module commonjs --sourcemap",
     "pretest:watch": "tsc test/*.ts --module commonjs --sourcemap --watch",
     "test": "nyc --reporter=lcov mocha",
-    "posttest": "nyc report --reporter=json && codecov -f coverage/*.json"
+    "posttest": "nyc report --reporter=json && codecov -f coverage/*.json"    
   },
   "repository": {
     "type": "git",
@@ -40,7 +43,7 @@
     "codecov": "^3.0.0",
     "mocha": "^4.0.1",
     "nyc": "^11.4.1",
-    "sinon": "^4.1.3",
+    "tslint": "^5.8.0",
     "typescript": "^2.6.2"
   }
 }
