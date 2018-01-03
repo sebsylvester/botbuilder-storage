@@ -1,46 +1,71 @@
 import { IBotStorageData } from "botbuilder";
 
-export type BotState = "userData" | "conversationData" | "privateConversationData";
+export type BotState = any;
+export type BotStateType = "userData" | "conversationData" | "privateConversationData";
 
-export interface IBotHashedStorageData extends IBotStorageData {
+export interface IBotStorageDataHash extends IBotStorageData {
     userDataHash?: string;
     conversationDataHash?: string;
     privateConversationDataHash?: string;
     [key: string]: any;
 }
 
+export interface ITTLSettings {
+    userData: number;
+    conversationData: number;
+    privateConversationData: number;
+}
+
 export interface IMongoWriteOperation {
     _id: string;
-    data: any;
+    data: string;
     hash: string;
-    type: BotState;
-    lastModified: string;
+    type: BotStateType;
+    lastModified: Date;
+    expireAt?: Date;
 }
 
 export interface IMongoReadOperation {
     _id: string;
-    type: BotState;
+    type: BotStateType;
+}
+
+export interface IMongoBotStorageSettings {
+    collection: string;
+    ttl?: ITTLSettings;
 }
 
 export interface IDynamoWriteOperation {
     key: string;
-    data: any;
+    data: string;
     hash: string;
-    type: BotState;
+    type: BotStateType;
     lastModified: string;
+    expireAt?: number;
 }
 
 export interface IDynamoReadOperation {
     key: string;
-    type: BotState;
+    type: BotStateType;
+}
+
+export interface IDynamoBotStorageSettings {
+    tableName: string;
+    primaryKey: string;
+    ttl?: ITTLSettings;
 }
 
 export interface IRedisWriteOperation {
     key: string;
     value: any;
+    expireAt?: number;
 }
 
 export interface IRedisReadOperation {
     key: string;
-    type: BotState;
+    type: BotStateType;
+}
+
+export interface IRedisBotStorageSettings {
+    ttl?: ITTLSettings;
 }
