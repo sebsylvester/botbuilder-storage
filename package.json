@@ -1,7 +1,7 @@
 {
   "name": "botbuilder-storage",
   "version": "1.0.0",
-  "description": "Storage adapter to manage your bot’s state data. Designed for bots built with the Microsoft Bot Builder SDK.",
+  "description": "Storage adapter designed for the Microsoft Bot Framework, to store your bot's conversation state in either MongoDB, DynamoDB and Redis.",
   "main": "lib/index.js",
   "types": "lib/",
   "scripts": {
@@ -14,7 +14,7 @@
     "pretest": "tsc test/*.ts --module commonjs --sourcemap",
     "pretest:watch": "tsc test/*.ts --module commonjs --sourcemap --watch",
     "test": "nyc --reporter=lcov mocha",
-    "posttest": "nyc report --reporter=json && codecov -f coverage/*.json"    
+    "posttest": "nyc report --reporter=json && codecov -f coverage/*.json"
   },
   "repository": {
     "type": "git",
