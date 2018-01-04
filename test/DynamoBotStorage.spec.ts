@@ -60,7 +60,10 @@ describe("DynamoBotStorage", () => {
 
     describe("getData", () => {
         const doc = {
-            Item: {} as any,
+            Item: {
+                data: { S: "" },
+                hash: { S: "" },
+            } as any,
         };
         const data = {
             Item: {
@@ -76,23 +79,26 @@ describe("DynamoBotStorage", () => {
 
         // Mock of DynamoDB client
         const dynamoClient = {
-            get(item, callback) {
-                switch (item.Key[settings.primaryKey]) {
+            getItem(item, callback) {
+                const primaryKeyObject = item.Key[settings.primaryKey];
+                const primaryKeyValue = primaryKeyObject && primaryKeyObject.S;
+
+                switch (primaryKeyValue) {
                     case "default-user":
-                        doc.Item.data = JSON.stringify(data.Item.userData);
-                        doc.Item.hash = data.Item.userDataHash;
+                        doc.Item.data.S = JSON.stringify(data.Item.userData);
+                        doc.Item.hash.S = data.Item.userDataHash;
                         break;
                     case "default-user:123456789":
-                        doc.Item.data = JSON.stringify(data.Item.privateConversationData);
-                        doc.Item.hash = data.Item.privateConversationDataHash;
+                        doc.Item.data.S = JSON.stringify(data.Item.privateConversationData);
+                        doc.Item.hash.S = data.Item.privateConversationDataHash;
                         break;
                     case "123456789":
-                        doc.Item.data = JSON.stringify(data.Item.conversationData);
-                        doc.Item.hash = data.Item.conversationDataHash;
+                        doc.Item.data.S = JSON.stringify(data.Item.conversationData);
+                        doc.Item.hash.S = data.Item.conversationDataHash;
                         break;
                     case "null":
-                        doc.Item.data = null;
-                        doc.Item.hash = null;
+                        doc.Item = null;
+                        doc.Item = null;
                         break;
                     default:
                         return callback(new Error("Something went wrong"));
@@ -142,6 +148,10 @@ describe("DynamoBotStorage", () => {
 
             botStorage.getData(context, (err: Error, data: IBotStorageDataHash) => {
                 expect(data.userData).to.deep.equal({});
+                doc.Item = {
+                    data: { S: "" },
+                    hash: { S: "" },
+                };
                 done();
             });
         });
@@ -191,20 +201,22 @@ describe("DynamoBotStorage", () => {
 
         // Mock of DynamoDB client
         let dynamoClient = {
-            put(doc, callback) {
-                const primaryKey = doc.Item[settings.primaryKey];
-                switch (primaryKey) {
+            putItem(doc, callback) {
+                const primaryKeyObject = doc.Item[settings.primaryKey];
+                const primaryKeyValue = primaryKeyObject && primaryKeyObject.S;
+
+                switch (primaryKeyValue) {
                     case "default-user":
-                        expect(doc.Item.data).to.equal(JSON.stringify(data.userData));
-                        expect(doc.Item.hash).to.equal(data.userDataHash);
+                        expect(doc.Item.data.S).to.equal(JSON.stringify(data.userData));
+                        expect(doc.Item.hash.S).to.equal(data.userDataHash);
                         break;
                     case "default-user:123456789":
-                        expect(doc.Item.data).to.equal(JSON.stringify(data.privateConversationData));
-                        expect(doc.Item.hash).to.not.equal(data.privateConversationDataHash);
+                        expect(doc.Item.data.S).to.equal(JSON.stringify(data.privateConversationData));
+                        expect(doc.Item.hash.S).to.not.equal(data.privateConversationDataHash);
                         break;
                     case "123456789":
-                        expect(doc.Item.data).to.equal(JSON.stringify(data.conversationData));
-                        expect(doc.Item.hash).to.not.equal(data.conversationDataHash);
+                        expect(doc.Item.data.S).to.equal(JSON.stringify(data.conversationData));
+                        expect(doc.Item.hash.S).to.not.equal(data.conversationDataHash);
                         break;
                     case "null":
                         break;
@@ -278,7 +290,7 @@ describe("DynamoBotStorage", () => {
 
             // New db mock to extend code coverage
             dynamoClient = {
-                put(doc, callback) {
+                putItem(doc, callback) {
                     const primaryKey = doc.Item[settings.primaryKey];
                     switch (primaryKey) {
                         case "default-user":
