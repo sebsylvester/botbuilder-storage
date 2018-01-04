@@ -89,19 +89,20 @@ export class DynamoBotStorage implements IBotStorage {
                 const { key, type } = entry;
                 const item = {
                     TableName: tableName,
-                    Key: { [primaryKey]: key },
+                    Key: { [primaryKey]: { S: key }},
                 };
 
-                this.dynamoClient.get(item, (err: Error, doc: any) => {
+                this.dynamoClient.getItem(item, (err: Error, doc: any) => {
                     if (err) {
                         return reject(err);
                     }
-                    const docData = doc && doc.Item && doc.Item.data || "{}";
-                    const hash = doc && doc.Item && doc.Item.hash;
+                    const docItem = doc && doc.Item || {};
+                    const dataString = docItem.data && docItem.data.S && JSON.parse(docItem.data.S) || {};
+                    const hashString = docItem.hash && docItem.hash.S;
                     const hashKey: string = type + "Hash";
 
-                    data[type] = JSON.parse(docData);
-                    data[hashKey] = hash;
+                    data[type] = dataString;
+                    data[hashKey] = hashString;
 
                     resolve();
                 });
@@ -180,13 +181,19 @@ export class DynamoBotStorage implements IBotStorage {
                 const { key, data, hash, type, lastModified, expireAt } = entry;
                 const doc = {
                     TableName: tableName,
-                    Item: { [primaryKey]: key, data, hash, type, lastModified } as any,
+                    Item: {
+                        [primaryKey]: { S: key },
+                        data: { S: data },
+                        hash: { S: hash },
+                        type: { S: type },
+                        lastModified: { S: lastModified },
+                    } as any,
                 };
                 if (expireAt) {
-                    doc.Item.expireAt = expireAt;
+                    doc.Item.expireAt = { N: expireAt.toString() };
                 }
 
-                this.dynamoClient.put(doc, (err: Error) => {
+                this.dynamoClient.putItem(doc, (err: Error) => {
                     if (err) {
                         return reject(err);
                     }
