@@ -21,6 +21,24 @@ To use any of the included adapters, you need to follow these three steps:
 * Create a storage adapter with the client and settings object.
 * Configure the bot to use this newly created adapter.
 
+### About time-to-live (TTL)
+All of the included adapters have configurable TTL support. This will act as a timeout for the stored data. After the timeout has expired, the state will automatically be deleted. But each time any state object is modified and saved by invoking ```session.save()``` in the dialog, that particular state will receive a new, recomputed expiration value based on the configured settings.
+
+As shown in the example below, all values should express the number of seconds the state data should be stored, and a different expiration value can be defined for each type of state the bot manages. Since you would use ```userData``` to save state that persists across multiple conversations, you would typically want to assign a large value for that state. On the other hand, for ```conversationState``` and ```privateConversationState``` the duration could be kept significantly shorter.
+
+```
+const settings: {
+    /* other settings */
+    ttl: {
+        // Assign values that express the number of seconds the date should be stored.
+        // Each time state is updated, the affected object will receive a new TTL value.
+        userData: 3600 * 24 * 365 // a year, expressed in seconds,
+        conversationData: 3600 * 24 * 7 // a week,
+        privateConversationData: 3600 * 24 * 7
+    }    
+}
+```
+
 ## Usage with MongoDB
 To enable TTL (time-to-live) when using MongoDB, you will first need to create a TTL index on the "expireAt" field like this:  
 ```db.your_collection.createIndex( { "expireAt": 1 }, { expireAfterSeconds: 0 } )```  
@@ -49,14 +67,7 @@ MongoClient.connect(host, (err, client) => {
             // the conversation state data will be saved.
             collection: "your_collection_name",
 
-            // Optional, but recommended:
-            // ==========================
-            // Declare how long the state should be stored in seconds.
-            // Should typically be a large value for the userData,
-            // but can be kept small for the conversation related state.
-            // Anytime a particular document, holding a specific type of
-            // state, is modified, the time-to-live value will be renewed 
-            // to avoid automatic deletion by MongoDB.
+            // Optional but recommended!
             ttl: {
                 userData: 3600 * 24 * 365 // a year,
                 conversationData: 3600 * 24 * 7 // a week,
@@ -111,9 +122,11 @@ const client = new DynamoDB({ region: "us-east-1" });
 // Define the adapter settings
 const settings = {
     // Required
-    tableName: "Botdata",
+    tableName: "your_table_name",
+
     // Required
-    primaryKey: "id",
+    primaryKey: "your_primary_key",
+
     // Optional but strongly recommended!
     ttl: {
         userData: 3600 * 24 * 365 // a year,
