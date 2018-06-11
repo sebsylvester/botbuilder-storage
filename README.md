@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/botbuilder-storage.svg)](https://badge.fury.io/js/botbuilder-storage)
 [![Build Status](https://travis-ci.org/sebsylvester/botbuilder-storage.svg?branch=master)](https://travis-ci.org/sebsylvester/botbuilder-storage)
-[![codecov](https://codecov.io/gh/sebsylvester/botbuilder-storage/branch/master/graph/badge.svg)](https://codecov.io/gh/sebsylvester/botbuilder-storage)
+[![codecov](https://codecov.io/gh/sebsylvester/botbuilder-storage/branch/master/graph/badge.svg)](https://codecov.io/gh/sebsylvester/botbuilder-storage) [![Greenkeeper badge](https://badges.greenkeeper.io/sebsylvester/botbuilder-storage.svg)](https://greenkeeper.io/)
 
 An npm module, to be used with the Bot Builder SDK for Node.js,
 that adds several storage adapters to your toolkit. Configure your bot to automatically save conversation state data in either MongoDB, DynamoDB and Redis. Auto-cleanup is supported in the form of configurable TTL settings.
