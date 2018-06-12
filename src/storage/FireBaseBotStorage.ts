@@ -18,16 +18,18 @@ export class FireBaseBotStorage extends BotStorage {
                 console.log("snapshot.hasChildren", snapshot.hasChildren())
 
                 snapshot.forEach((d: any) => {
-                    // console.log("data", data)
-                    let item = d.val()
-                    let type = JSON.parse(item.state);
+                    let item = d.val();
 
-                    data[type] = JSON.parse(item.state);
-                    const hashKey: string = type + "Hash";
-                    const hashString = item.hash && item.hash.S;
-                    data[hashKey] = hashString;
+                    var docData = item.state || "{}";
+                    var hash = item.hash;
+                    var hashKey = entry.type + "Hash";
+
+                    data[entry.type] = JSON.parse(docData);
+                    data[hashKey] = hash;
+
                 });
                 resolve();
+
                 reject();
             });
         }
@@ -51,27 +53,25 @@ export class FireBaseBotStorage extends BotStorage {
                             console.log("Data could not be saved." + error);
                             reject();
                         } else {
-                            console.log("Data saved successfully.");
+                            // console.log("Data saved successfully.");
                             resolve();
                         }
                     });
 
                 } else {
-                    console.log("Data already saved successfully.");
-                    storageClient.update({
-                        state: JSON.stringify({
-                            data,
-                            hash,
-                            type,
-                            lastModified,
-                            expireAt
-                        }, key)
-                    }, (error: any) => {
+                    let p_name = Object.keys(snapshot.val())[0];
+                    let o: any = {};
+                    o[p_name] = {
+                        state: data,
+                        key
+                    };
+                    storageClient.update(o, (error: any) => {
                         if (error) {
                             console.log("Data could not be saved." + error);
                             reject();
-                        } else {
-                            console.log("Data saved successfully.!!!");
+                        }
+                        else {
+                            // console.log("Data saved successfully.");
                             resolve();
                         }
                     });

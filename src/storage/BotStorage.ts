@@ -40,10 +40,10 @@ export class BotStorage implements IBotStorage {
         // }
         const { ttl } = settings || {} as IBotStorageSettings;
 
-        // if (!storageClient) {
-        //     console.log("console Invalid constructor arguments for the BotStorage class. BotStorage")
-        //     throw new Error("Invalid constructor arguments for the BotStorage class. ");
-        // }
+        if (!storageClient) {
+            console.log("console Invalid constructor arguments for the BotStorage class. BotStorage")
+            throw new Error("Invalid constructor arguments for the BotStorage class. ");
+        }
 
         if (ttl) {
             if (!validateTTLSettings(ttl)) {
