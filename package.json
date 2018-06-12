@@ -1,6 +1,6 @@
 {
   "name": "botbuilder-storage-firebase-database",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Storage adapter designed for the Microsoft Bot Framework, to store your bot's conversation state in either MongoDB, DynamoDB or Redis.",
   "main": "lib/index.js",
   "types": "lib/",

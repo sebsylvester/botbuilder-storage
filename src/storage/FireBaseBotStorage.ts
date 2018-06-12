@@ -58,20 +58,20 @@ export class FireBaseBotStorage extends BotStorage {
 
                 } else {
                     console.log("Data already saved successfully.");
-                    snapshot.update({
+                    storageClient.update({
                         state: JSON.stringify({
                             data,
                             hash,
                             type,
                             lastModified,
                             expireAt
-                        })
+                        }, key)
                     }, (error: any) => {
                         if (error) {
                             console.log("Data could not be saved." + error);
                             reject();
                         } else {
-                            console.log("Data saved successfully.");
+                            console.log("Data saved successfully.!!!");
                             resolve();
                         }
                     });
