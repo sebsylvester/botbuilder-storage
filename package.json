@@ -1,6 +1,6 @@
 {
-  "name": "botbuilder-storage",
-  "version": "1.0.2",
+  "name": "botbuilder-storage-firebase-database",
+  "version": "1.0.0",
   "description": "Storage adapter designed for the Microsoft Bot Framework, to store your bot's conversation state in either MongoDB, DynamoDB or Redis.",
   "main": "lib/index.js",
   "types": "lib/",
@@ -27,10 +27,10 @@
     "state",
     "storage"
   ],
-  "author": "Sebastian Sylvester",
+  "author": "Sebastian Sylvester ; Wolke Lin",
   "license": "MIT",
-  "bugs": "https://github.com/sebsylvester/botbuilder-storage/issues",
-  "homepage": "https://github.com/sebsylvester/botbuilder-storage",
+  "bugs": "https://github.com/Wolke/botbuilder-storage/issues",
+  "homepage": "https://github.com/Wolke/botbuilder-storage",
   "dependencies": {
     "botbuilder": "^3.14.0"
   },

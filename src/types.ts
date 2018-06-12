@@ -15,6 +15,29 @@ export interface ITTLSettings {
     conversationData: number;
     privateConversationData: number;
 }
+export interface IWriteOperation {
+    key: string;
+    data: string;
+    hash: string;
+    type: BotStateType;
+    lastModified: Date;
+    expireAt?: Date;
+}
+
+export interface IReadOperation {
+    type: BotStateType;
+}
+export interface IBotStorageSettings {
+    ttl?: ITTLSettings;
+}
+
+export interface IFirebaseWriteOperation extends IWriteOperation {
+}
+export interface IFirebaseReadOperation extends IReadOperation {
+}
+export interface IFirebaseBotStorageSettings extends IBotStorageSettings {
+    refName: string;
+}
 
 export interface IMongoWriteOperation {
     _id: string;
