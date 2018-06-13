@@ -8,3 +8,4 @@ npm-debug.log
 coverage
 test/*.*
 !test/*.ts
+package.json
