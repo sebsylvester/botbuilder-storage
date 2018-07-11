@@ -32,11 +32,11 @@ const settings: {
     ttl: {
         // Assign values that express the number of seconds the date should be stored.
         // Each time state is updated, the affected object will receive a new TTL value.
-        userData: 3600 * 24 * 365 // a year, expressed in seconds,
-        conversationData: 3600 * 24 * 7 // a week,
+        userData: 3600 * 24 * 365, // a year, expressed in seconds
+        conversationData: 3600 * 24 * 7, // a week
         privateConversationData: 3600 * 24 * 7
     }    
-}
+};
 ```
 
 ## Usage with MongoDB
@@ -69,16 +69,16 @@ MongoClient.connect(host, (err, client) => {
 
             // Optional but recommended!
             ttl: {
-                userData: 3600 * 24 * 365 // a year,
-                conversationData: 3600 * 24 * 7 // a week,
+                userData: 3600 * 24 * 365, // a year
+                conversationData: 3600 * 24 * 7, // a week
                 privateConversationData: 3600 * 24 * 7
             }
-        }
+        };
         // Select the datebase with the client
         client = client.db('your_db_name');
         
         // Instantiate the adapter with the client and settings.
-        const adapter = new MongoBotStorage(client, settings)
+        const adapter = new MongoBotStorage(client, settings);
         
         // Configure the bot to use the adapter.
         bot.set('storage', adapter);
@@ -129,14 +129,14 @@ const settings = {
 
     // Optional but strongly recommended!
     ttl: {
-        userData: 3600 * 24 * 365 // a year,
-        conversationData: 3600 * 24 * 7 // a week,
+        userData: 3600 * 24 * 365, // a year
+        conversationData: 3600 * 24 * 7, // a week
         privateConversationData: 3600 * 24 * 7
     }
 };
 
 // Instantiate the adapter with the client and settings.
-const adapter = new DynamoBotStorage(client, settings)
+const adapter = new DynamoBotStorage(client, settings);
         
 // Configure the bot to use the adapter.
 bot.set('storage', adapter);
@@ -160,14 +160,14 @@ const client = redis.createClient({ host, prefix: 'bot:state:' });
 const settings = {
     // Optional but recommended!
     ttl: {
-        userData: 3600 * 24 * 365 // a year,
-        conversationData: 3600 * 24 * 7 // a week,
+        userData: 3600 * 24 * 365, // a year
+        conversationData: 3600 * 24 * 7, // a week
         privateConversationData: 3600 * 24 * 7
     }
 };
 
 // Instantiate the adapter with the client and settings.
-const adapter = new RedisBotStorage(client, settings)
+const adapter = new RedisBotStorage(client, settings);
 
 // Configure the bot to use the adapter.
 bot.set('storage', adapter);
